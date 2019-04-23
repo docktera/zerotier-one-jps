@@ -1,0 +1,68 @@
+version: 1.0
+type: update
+logo: images/zerotier-one.png
+id: zerotier-one-addon
+name: ZeroTier-One
+
+description:
+  text: /text/description.md
+  short: Free tool to configure ZeroTier-One.
+
+targetNodes:
+  nodeGroup: '*'
+  
+nodeGroupAlias:
+  ${targetNodes.nodeGroup}: cp
+
+homepage: https://github.com/docktera/zerotier-one-jps
+baseUrl: https://raw.githubusercontent.com/docktera/zerotier-one-jps/master
+
+globals:
+  installScript: https://raw.githubusercontent.com/docktera/zerotier-one-jps/master/scripts/install-zerotier.sh
+  uninstallScript: https://raw.githubusercontent.com/docktera/zerotier-one-jps/master/scripts/uninstall-zerotier.sh
+
+settings:
+  fields:
+    - type: string
+      name: networks
+      regex: "[0-9a-fxA-FX]{16}"
+      caption: Network ID(s)
+      required: true
+
+onInstall: 
+  create: ${globals.installScript}
+onUninstall: 
+  uninstall: ${globals.uninstallScript}
+onBeforeDelete:
+  uninstall: ${globals.uninstallScript}
+
+actions:
+  create:
+    - cmd[cp]:
+        - curl -sSfL "${this}" -o /root/install-zerotier.sh 2>&1
+        - /bin/bash /root/install-zerotier.sh ${settings.networks}
+        - rm -f /root/install-zerotier.sh
+      user: root
+    - setGlobals:
+        nodeid: ${response.out}
+    
+  update:
+    create: ${globals.installScript}
+
+  uninstall:
+    cmd[cp]:
+      - curl -sSfL "${this}" -o /root/uninstall-zerotier.sh 2>&1
+      - /bin/bash /root/uninstall-zerotier.sh
+      - rm -f /root/uninstall-zerotier.sh
+    user: root
+
+buttons:
+  settings: main
+  caption: Configure
+  loadingText: Updating...
+  action: update
+  successText: Zerotier-One networks have changed.
+
+success: 
+  text: /text/success.md
+  email: false
